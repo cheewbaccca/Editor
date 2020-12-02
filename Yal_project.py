@@ -1,7 +1,7 @@
 import sys
 from PyQt5.Qt import *
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QIcon, QColor, QFont
 from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QTextEdit, QFileDialog, QFontComboBox, \
     QComboBox, QLabel, QColorDialog, QDialogButtonBox, QMessageBox
 
@@ -32,17 +32,21 @@ class Editor(QMainWindow):
     def resizeEvent(self, event):
         self.status.move(5, self.height() - 50)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event):                     # при закрытии приложения предлагается сохранить изменения
         if len(self.text.toPlainText().split()) != 0:
-            otvet = QMessageBox.question(self, 'Editor',
-                                         'Сохранить изменения?', QMessageBox.Yes, QMessageBox.No)
+            otvet = QMessageBox(self)
+            otvet.setWindowTitle('Editor')
+            otvet.setText('Сохранить изменения?')
+            yes = otvet.addButton('Да', QMessageBox.AcceptRole)
+            no = otvet.addButton('Нет', QMessageBox.RejectRole)
+            otvet.exec()
         else:
             return
-        if otvet == QMessageBox.Yes:
+        if otvet.clickedButton() is yes:
             self.save()
             event.accept()
 
-    def counter(self):
+    def counter(self):    # количество слов и линий
         c = self.text.textCursor()
         self.status.setText(f"Количество слов: {len(self.text.toPlainText().split())}\nКоличество линий:"
                             f"{c.blockNumber()}")
@@ -94,26 +98,21 @@ class Editor(QMainWindow):
         fonts_sizes = QComboBox(self)
         fonts_sizes.setEditable(True)
         font_color = QComboBox(self)
-        italic = QAction('Italic', self)
-        underline = QAction('Underline', self)             # ТОЖЕ ИКОНКИ!!!!
-        choosebackground = QAction('Фон текста', self)
+        italic = QAction(QIcon(r'icons\italic.png'),'Курсив',self)
+        underline = QAction(QIcon(r'icons\underline.png'),'Нижнее подчеркивание', self)  # ТОЖЕ ИКОНКИ!!!!
+        choosebackground = QAction(QIcon(r'icons\highlighter.png'),'Фон текста', self)
+        bold = QAction(QIcon(r'icons\bold.png'), 'Полужирный', self)
 
         self.fontbar.addWidget(fonts)  # добавление в menubar
-
         self.fontbar.addWidget(fonts_sizes)
         self.fontbar.addWidget(font_color)
         self.fontbar.addSeparator()
         self.fontbar.addAction(choosebackground)
         self.fontbar.addAction(italic)
         self.fontbar.addAction(underline)
+        self.fontbar.addAction(bold)
 
 
-        fonts.setToolTip('Выбрать шрифт')
-        choosebackground.setToolTip('Выбрать фон шрифта')
-        fonts_sizes.setToolTip('Выбрать размер шрифта')
-        font_color.setToolTip('Выбрать цвет шрифта')
-        italic.setToolTip('Курсив')
-        underline.setToolTip('Подчёркивание')
 
         fonts.currentFontChanged.connect(self.fontchanged)
         choosebackground.triggered.connect(self.background)
@@ -121,7 +120,7 @@ class Editor(QMainWindow):
         font_color.activated.connect(self.newcolor)
         italic.triggered.connect(self.italic)
         underline.triggered.connect(self.underline)
-
+        bold.triggered.connect(self.bold)
         sizes = ['8', '9', '10', '11', '12', '14', '16', '18',
                  '20', '22', '24', '26', '28', '36', '48', '72', '80', '96']  # размеры текста
 
@@ -157,22 +156,32 @@ class Editor(QMainWindow):
             self.text.setFontUnderline(False)
         else:
             self.text.setFontUnderline(True)
-    # ДАЛЬШЕ BOLD,ITALIC И ТД, ALLIGNMENT И ТД!!!!!!!!
+    def bold(self):
+        if self.text.fontWeight() == QFont.Normal:
+            self.text.setFontWeight(QFont.Bold)
+        else:
+            self.text.setFontWeight(QFont.Normal)
 
-    def formattingbar(self):  # тулбар форматирования             # здесь должны быть ИКОНКИ!!!!!
-        self.fontbar = self.addToolBar('Форматирование')
-        viravnivanie_left = QAction('left!', self)
-        viravnivanie_left.triggered.connect(self.left)
+    def formattingbar(self):  # тулбар форматирования
+        self.formatbar = self.addToolBar('Форматирование')
 
-        viravnivanie_center = QAction('center!', self)
+        undo = QAction(QIcon(r'icons\undo.png'), 'Отменить ввод',self)
+        redo = QAction(QIcon(r'icons\redo.png'), 'Повторить ввод',self)
+        viravnivanie_left = QAction(QIcon(r'icons\leftallignment.png'),'Выравнивание по левому краю', self)
+        viravnivanie_right = QAction(QIcon(r'icons\rightallignment.png'), 'Выравнивание по правому краю', self)
+        viravnivanie_center = QAction(QIcon(r'icons\centerallignment.png'),'Выравнивание по центру', self)
+
+        undo.triggered.connect(self.undo)
+        redo.triggered.connect(self.redo)
         viravnivanie_center.triggered.connect(self.center)
-
-        viravnivanie_right = QAction('right!', self)
+        viravnivanie_left.triggered.connect(self.left)
         viravnivanie_right.triggered.connect(self.right)
 
-        self.fontbar.addAction(viravnivanie_left)
-        self.fontbar.addAction(viravnivanie_right)
-        self.fontbar.addAction(viravnivanie_center)
+        self.formatbar.addAction(undo)
+        self.formatbar.addAction(redo)
+        self.formatbar.addAction(viravnivanie_left)
+        self.formatbar.addAction(viravnivanie_center)
+        self.formatbar.addAction(viravnivanie_right)
 
     def left(self):
         self.text.setAlignment(Qt.AlignLeft)
@@ -183,9 +192,15 @@ class Editor(QMainWindow):
     def center(self):
         self.text.setAlignment(Qt.AlignCenter)
 
+    def undo(self):
+        self.text.undo()
+
+    def redo(self):
+        self.text.redo()
 
 if __name__ == '__main__':
     app = QApplication([])
     edit = Editor()
     edit.show()
     sys.exit(app.exec_())
+
