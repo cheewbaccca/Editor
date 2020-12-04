@@ -36,7 +36,7 @@ class Editor(QMainWindow):
     def resizeEvent(self, event):
         self.status.move(5, self.height() - 50)
 
-    def closeEvent(self, event):  # при закрытии приложения предлагается сохранить изменения
+    def saving(self, event=''):  # no comments
         if len(self.text.toPlainText().split()) != 0 and not self.saved:
             otvet = QMessageBox(self)
             otvet.setWindowTitle('Editor')
@@ -48,7 +48,11 @@ class Editor(QMainWindow):
             return
         if otvet.clickedButton() is yes:
             self.save()
-            event.accept()
+            if event != '':  # no comments x2
+                event.accept()
+
+    def closeEvent(self, event):  # при закрытии приложения предлагается сохранить изменения
+        self.saving(event)
 
     def counter(self):  # количество слов,линий и символов
         c = self.text.textCursor()
@@ -91,7 +95,7 @@ class Editor(QMainWindow):
 
     def new(self):  # функции для нового файла,открытия и сохранения файла
         if len(self.text.toPlainText().split()) != 0:
-            self.save()
+            self.saving()
         self.text.clear()
         self.file = ''
         self.saved = False
