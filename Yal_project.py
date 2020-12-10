@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QColor, QFont, QImage
 from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QTextEdit, QFileDialog, QFontComboBox, \
-    QComboBox, QLabel, QColorDialog, QMessageBox, QDialog
+    QComboBox, QLabel, QColorDialog, QMessageBox
 import sqlite3
 
 
@@ -10,7 +10,7 @@ class Editor(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setGeometry(400, 200, 1000, 800)
-        self.setWindowTitle('Word v. 0.2')
+        self.setWindowTitle('Editor 0.1')
         self.text = QTextEdit()
         self.setCentralWidget(self.text)
         self.db = sqlite3.connect('projectbase.db')
@@ -26,7 +26,10 @@ class Editor(QMainWindow):
                        "Красный": QColor('#ff0000'),
                        "Зеленый": QColor('#008000'),
                        "Синий": QColor('#0000ff'),
-                       "Серый": QColor('#808080')}
+                       "Серый": QColor('#808080'),
+                       "Оранжевый": QColor('#ffa500'),
+                       "Фиолетовый":QColor('#8b00ff'),
+                       "Тёмно серый": QColor("#444444")}
         self.saved = False  # сохранен ли файл
         self.createMenubar()
         self.fonts()
@@ -36,7 +39,7 @@ class Editor(QMainWindow):
     def resizeEvent(self, event):
         self.status.move(5, self.height() - 50)
 
-    def saving(self, event=''):  # no comments
+    def saving(self, event=''):  # не бейте за костыль
         if len(self.text.toPlainText().split()) != 0 and not self.saved:
             otvet = QMessageBox(self)
             otvet.setWindowTitle('Editor')
@@ -48,7 +51,7 @@ class Editor(QMainWindow):
             return
         if otvet.clickedButton() is yes:
             self.save()
-            if event != '':  # no comments x2
+            if event != '':  # no comments
                 event.accept()
 
     def closeEvent(self, event):  # при закрытии приложения предлагается сохранить изменения
